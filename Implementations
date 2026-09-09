@@ -1,20 +1,74 @@
-# Lab Implementation Notes
+# Network Implementation and Design Notes
 
-## Scenario
+## 1. Scenario
 
-This lab represents a small business network with employee systems, management devices, internal servers, wireless access, security cameras, VoIP phones, guest devices, a DMZ, and internet connectivity.
+This project simulates the network of a small business with multiple user groups, internal services, wireless networks, security infrastructure, voice devices, guest access, and externally exposed decoy systems.
 
-The network was designed with three major goals:
+The network was designed around four main requirements:
 
 1. Segmentation
 2. Security
 3. Availability
+4. Manageability
 
-Rather than placing every device into one flat network, systems were separated based on purpose and trust level.
+The final design avoids a flat network and instead separates systems based on purpose and trust level.
 
-Redundant routing and switching infrastructure was also added to reduce single points of failure.
+---
 
-## VLAN Structure
+## 2. Physical and Logical Architecture
+
+The network contains several layers with different responsibilities.
+
+### Managed Layer 2 Access Switch
+
+The managed Layer 2 switch provides connectivity for endpoint devices.
+
+Its responsibilities include:
+
+- Connecting wired endpoints
+- Assigning switch ports to VLANs
+- Carrying multiple VLANs toward the Layer 3 infrastructure
+- Supporting separate logical networks over shared physical infrastructure
+
+### Layer 3 Switches
+
+Two Layer 3 switches provide routing between VLANs.
+
+The switches operate as a high-availability pair.
+
+The primary device operates as the active switch and the secondary device operates as the standby switch.
+
+If the primary Layer 3 switch becomes unavailable, the standby device can provide failover.
+
+### Company Routers
+
+Two company routers are included to reduce dependency on a single routing device.
+
+They provide upstream routing between the internal network infrastructure and the perimeter network.
+
+### Firewall
+
+The firewall forms part of the perimeter security architecture.
+
+Its purpose is to allow or deny traffic according to security policy.
+
+### IDS/IPS
+
+An inline IDS/IPS component provides additional inspection of network traffic.
+
+The firewall answers:
+
+"Should this traffic be allowed?"
+
+The IPS adds another question:
+
+"Even if this traffic is allowed, does it appear malicious?"
+
+This creates an additional layer of protection.
+
+---
+
+## 3. VLAN Structure
 
 ### VLAN 10 - Servers
 
@@ -22,15 +76,15 @@ Network:
 
 10.0.1.0/24
 
-Devices:
+Systems include:
 
-- FTP server
 - DNS server
+- FTP server
 - HTTP/HTTPS server
-- NAS server
-- Network printer
+- NAS
+- Network printers
 
-This VLAN contains the main internal services used by staff and management.
+Separating servers from employee endpoints reduces direct exposure of infrastructure services.
 
 ### VLAN 20 - Security
 
@@ -38,13 +92,12 @@ Network:
 
 10.0.2.0/24
 
-Devices:
+Systems include:
 
-- Security Camera 1
-- Security Camera 2
-- NVR / Video Surveillance Server
+- IP security cameras
+- NVR / surveillance server
 
-The cameras and NVR were placed in a separate VLAN so security infrastructure does not share the same network as employee workstations.
+Security and IoT-style devices are separated from normal workstations.
 
 ### VLAN 30 - Management
 
@@ -52,16 +105,13 @@ Network:
 
 10.0.3.0/24
 
-Devices:
+Systems include:
 
-- Management PC 1
-- Management PC 2
-- Management Laptop 1
-- Management Laptop 2
+- Management PCs
+- Management laptops
+- Management wireless clients
 
-The management laptops also connect through a dedicated management SSID.
-
-This VLAN is treated as a more trusted administrative network.
+This network is treated as a higher-trust administrative VLAN.
 
 ### VLAN 40 - Staff
 
@@ -69,15 +119,11 @@ Network:
 
 10.0.4.0/24
 
-Devices:
+Systems include:
 
-- Staff PC 1
-- Staff PC 2
-- Staff PC 3
-- Staff PC 4
-- Staff mobile device
-
-The Staff SSID is mapped to this VLAN.
+- Staff workstations
+- Staff mobile devices
+- Staff wireless clients
 
 ### VLAN 50 - Voice
 
@@ -85,12 +131,11 @@ Network:
 
 10.0.5.0/24
 
-Devices:
+Systems include:
 
-- VoIP Phone 1
-- VoIP Phone 2
+- VoIP phones
 
-Voice traffic is separated from general employee traffic.
+Voice traffic is separated from general user traffic.
 
 ### VLAN 60 - Guest
 
@@ -98,13 +143,13 @@ Network:
 
 10.0.6.0/24
 
-Devices:
+Systems include:
 
 - Guest wireless access point
 - Guest phone
 - Guest tablet
 
-Guest users are allowed internet access but are blocked from internal business networks.
+Guest devices are allowed internet connectivity but are restricted from internal business networks.
 
 ### VLAN 70 - DMZ
 
@@ -112,144 +157,227 @@ Network:
 
 10.0.7.0/24
 
-Devices:
+Systems include:
 
 - Honeypot endpoint 1
 - Honeypot endpoint 2
 - Honeypot server
 
-The DMZ contains decoy systems that are intentionally treated as untrusted.
+DMZ systems are treated as untrusted and cannot freely initiate connections into internal VLANs.
 
-If one of these systems becomes compromised, ACL rules prevent it from initiating connections into trusted internal VLANs.
+---
 
-## Wireless Segmentation
+## 4. Wireless Design
 
-The staff wireless access point supports multiple SSIDs.
+The employee wireless infrastructure supports separate SSIDs.
 
-The Management SSID maps to VLAN 30.
+Management SSID:
+VLAN 30
 
-The Staff SSID maps to VLAN 40.
+Staff SSID:
+VLAN 40
 
-This allows one physical wireless access point to place users into different logical networks.
+This demonstrates how multiple wireless networks can use the same access point while assigning clients to different VLANs.
 
-The guest wireless access point maps to VLAN 60 and is isolated from internal corporate resources.
+The guest wireless environment uses a separate access point associated with VLAN 60.
 
-## Switching and Routing
+Guest devices are isolated from corporate resources.
 
-The network uses Layer 3 switching for routing between VLANs.
+---
 
-Multiple VLANs share the same physical switching infrastructure but remain logically separated.
+## 5. Inter-VLAN Routing
 
-A Layer 3 switch acts as the gateway for the VLANs and routes traffic between networks when permitted.
+The Layer 3 switches provide routing between VLANs.
 
-ACLs are used to control inter-VLAN communication.
+Without filtering, inter-VLAN routing could allow devices from one VLAN to communicate with another.
 
-## Access Control
+For that reason, routing is combined with ACL-based access control.
 
-The ACL configuration uses a top-down, first-match model.
+VLAN segmentation separates the networks.
 
-The default policy is deny.
+ACLs determine whether communication between those networks is actually permitted.
 
-This means traffic is blocked unless an explicit permit rule exists.
+---
 
-Examples of permitted traffic include:
+## 6. ACL Policy
 
-- Management to approved internal resources
-- Staff to required internal services
-- Staff to the internet
-- Guest to the internet
+The network uses a deny-by-default policy.
 
-Examples of denied traffic include:
+If no ACL rule explicitly permits traffic, the traffic is blocked.
 
-- Staff to Management
-- Security to Staff
-- Guest to Servers
-- Guest to Security
-- Guest to Management
-- Guest to Staff
-- Guest to Voice
-- Guest to DMZ
-- DMZ to Servers
-- DMZ to Security
-- DMZ to Management
-- DMZ to Staff
-- DMZ to Voice
+The ACL is processed from top to bottom using first-match behavior.
 
-## DMZ Security
+This means more specific rules must appear before broader rules that would otherwise match the same traffic.
 
-The honeypot systems are placed in VLAN 70.
+Examples of security policy include:
 
-They are intentionally separated from trusted systems because honeypots may receive suspicious or malicious traffic.
+Management → approved internal resources:
+Permit
 
-The DMZ is allowed to receive only the traffic required for testing and monitoring.
+Staff → Internet:
+Permit
 
-Traffic initiated from the DMZ toward trusted internal VLANs is denied.
+Staff → Management:
+Deny
 
-This limits lateral movement if a honeypot is compromised.
+Security → Staff:
+Deny
 
-## High Availability
+Guest → Internet:
+Permit
 
-The original design contained single points of failure.
+Guest → internal networks:
+Deny
 
-If the only Layer 3 switch or company router failed, large portions of the network could become unavailable.
+DMZ → trusted internal networks:
+Deny
 
-To improve resilience, the final design includes:
+This reduces unnecessary communication and limits lateral movement between networks.
 
-- Two Layer 3 switches
-- Two company routers
-- High-availability pairing
-- Active/passive failover
+---
 
-### Layer 3 Switch Failover
+## 7. DMZ and Honeypot Security
 
-The Layer 3 switches are configured as a high-availability pair.
+The honeypot environment is placed in VLAN 70.
 
-L3-1 operates as the active device.
+Honeypots are intentionally designed to attract or observe suspicious activity and therefore must not be treated as trusted internal systems.
 
-L3-2 operates as the standby device.
+The DMZ is isolated from:
 
-During normal operation, the active Layer 3 switch handles network traffic.
+- Server VLAN
+- Security VLAN
+- Management VLAN
+- Staff VLAN
+- Voice VLAN
 
-If the active device becomes unavailable, the standby device can take over.
+If a honeypot becomes compromised, the attacker should not be able to use that system as a direct path into trusted networks.
 
-This reduces the Layer 3 switching infrastructure as a single point of failure.
+---
+
+## 8. Threat Detection and Prevention
+
+The network includes an IDS/IPS component.
+
+The firewall handles policy-based traffic filtering.
+
+The IDS/IPS provides deeper inspection for suspicious or malicious activity.
+
+Using both demonstrates defense in depth.
+
+A connection being permitted through the firewall does not automatically mean the traffic itself is safe.
+
+---
+
+## 9. High Availability
+
+The network includes redundancy at both the Layer 3 switching and routing layers.
+
+### Layer 3 Switch Redundancy
+
+Two Layer 3 switches are configured as an HA pair.
+
+Primary:
+L3-1
+
+Secondary:
+L3 Backup
+
+Operating mode:
+Active / Passive
+
+The active switch handles normal Layer 3 operations.
+
+The standby device provides failover if the active switch becomes unavailable.
 
 ### Router Redundancy
 
 Two company routers are included in the topology.
 
-The purpose of the second router is to provide an alternate routing path if the primary router becomes unavailable.
+The second router provides an alternate infrastructure path if the primary routing device fails.
 
-This improves network availability and helps prevent a single router failure from disrupting the entire company network.
+---
 
-## Fault Tolerance
+## 10. Access Layer Design
 
-Fault tolerance was added to make the network more resilient.
+Endpoint devices do not need separate physical connections to both Layer 3 switches.
 
-The security design focuses on preventing unauthorized communication.
+Instead, endpoints connect to the managed Layer 2 access switch.
 
-The high-availability design focuses on keeping the network operational when infrastructure fails.
+The access switch connects upstream to the redundant Layer 3 infrastructure.
 
-These are separate but equally important goals.
+Conceptually:
 
-Security protects confidentiality and integrity.
+Endpoints
+   |
+Managed L2 Access Switch
+   |               |
+L3 Primary      L3 Backup
 
-Redundancy and failover improve availability.
+This keeps endpoint connectivity manageable while still allowing redundancy upstream.
 
-Together, they create a more complete network design.
+---
 
-## Key Takeaways
+## 11. Remaining Single Point of Failure
 
-One of the biggest lessons from this lab was that VLANs provide logical separation, but they do not automatically provide complete security.
+The current design uses one managed Layer 2 access switch.
 
-Once inter-VLAN routing is enabled, ACLs or firewall policies are required to control which VLANs are allowed to communicate.
+Although the Layer 3 switches and routers include redundancy, failure of the access switch could still disconnect endpoint devices.
 
-I also learned how multiple SSIDs can be mapped to different VLANs using the same wireless access point.
+This is an intentional limitation identified during the design review.
 
-Another major lesson was understanding that secure infrastructure can still fail if critical devices have no backup.
+A production implementation requiring greater availability could add:
 
-Adding redundant Layer 3 switches and company routers introduced fault tolerance into the network.
+- A second managed access switch
+- Redundant uplinks
+- Dual-homed critical servers
+- NIC teaming or bonding where appropriate
 
-The active/passive configuration demonstrated how a standby device can take over if the primary network device fails.
+Recognizing this limitation is important because redundancy at one layer does not automatically make the entire network fault tolerant.
 
-The final design combines segmentation, least privilege, DMZ isolation, wireless separation, access control, redundancy, and failover into one small business network.
+---
+
+## 12. Security and Availability Goals
+
+The final network demonstrates both security and resilience.
+
+Security controls focus on:
+
+- Segmentation
+- Least privilege
+- Access control
+- Guest isolation
+- DMZ isolation
+- Management protection
+- Threat detection
+- Reduction of lateral movement
+
+Availability controls focus on:
+
+- Redundant Layer 3 switches
+- Active/passive failover
+- Redundant company routers
+- Alternate network paths
+
+Together, these provide a more complete small-business network architecture.
+
+---
+
+## 13. Key Takeaways
+
+This project reinforced several important networking concepts.
+
+A physical switch can carry devices from multiple logical networks without placing those devices in the same VLAN.
+
+Layer 2 switching provides endpoint connectivity while Layer 3 switching provides routing between networks.
+
+VLANs provide segmentation, but ACLs or firewall policies are required to control routed communication.
+
+Wireless SSIDs can be mapped to different VLANs to separate users even when they share wireless infrastructure.
+
+DMZ and guest networks should be treated as lower-trust environments and restricted from internal systems.
+
+Firewalls and IPS technologies perform related but different security functions.
+
+Finally, high availability must be designed at multiple layers. Adding a backup core switch does not automatically eliminate every possible single point of failure.
+
+The final topology combines network segmentation, security policy, threat prevention, routing, wireless networking, server infrastructure, and high availability into one cohesive small-business design.
