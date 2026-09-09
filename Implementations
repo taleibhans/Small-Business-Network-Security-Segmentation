@@ -1,0 +1,184 @@
+# Lab Implementation Notes
+
+## Scenario
+
+This lab represents a small business network with multiple departments, internal services, wireless access, security systems, VoIP devices, and internet connectivity.
+
+The network was designed to prevent all devices from existing in one flat network.
+
+Instead, systems were separated based on function and trust level.
+
+## VLAN Structure
+
+### VLAN 10 - Servers
+
+Network:
+
+10.0.1.0/24
+
+Devices:
+
+- FTP server
+- DNS server
+- HTTP/HTTPS server
+- NAS server
+- Network printer
+
+This VLAN contains the main internal services used by employees and management.
+
+### VLAN 20 - Security
+
+Network:
+
+10.0.2.0/24
+
+Devices:
+
+- Security Camera 1
+- Security Camera 2
+- NVR
+
+The security systems were placed on their own VLAN to prevent cameras from directly communicating with normal employee workstations.
+
+### VLAN 30 - Management
+
+Network:
+
+10.0.3.0/24
+
+Devices:
+
+- Management PC 1
+- Management PC 2
+- Management Laptop 1
+- Management Laptop 2
+
+The management laptops also connect through a dedicated management SSID.
+
+This VLAN is treated as a more trusted administrative network.
+
+### VLAN 40 - Staff
+
+Network:
+
+10.0.4.0/24
+
+Devices:
+
+- Staff PC 1
+- Staff PC 2
+- Staff PC 3
+- Staff PC 4
+- Staff mobile device
+
+The staff wireless SSID is mapped to this VLAN.
+
+### VLAN 50 - Voice
+
+Network:
+
+10.0.5.0/24
+
+Devices:
+
+- VoIP Phone 1
+- VoIP Phone 2
+
+Voice devices are separated from general employee traffic.
+
+### VLAN 60 - Guest
+
+Network:
+
+10.0.6.0/24
+
+Devices:
+
+- Guest wireless access point
+- Guest phone
+- Guest tablet
+
+Guest systems are allowed internet access but are blocked from internal corporate VLANs.
+
+### VLAN 70 - DMZ
+
+Network:
+
+10.0.7.0/24
+
+Devices:
+
+- Honeypot 1
+- Honeypot 2
+- Honeypot server
+
+The DMZ is separated from internal systems.
+
+The honeypot systems are designed as decoy systems and are treated as untrusted.
+
+## Wireless Segmentation
+
+The staff wireless access point provides more than one SSID.
+
+The management SSID is associated with VLAN 30.
+
+The staff SSID is associated with VLAN 40.
+
+This allows the same wireless infrastructure to place users into different logical networks based on which SSID they connect to.
+
+The guest wireless access point is separate and is associated with VLAN 60.
+
+## ACL Configuration
+
+The ACL follows a top-down, first-match policy.
+
+The default policy is deny.
+
+This means any traffic that is not explicitly permitted is blocked.
+
+Examples of permitted traffic:
+
+- Management to internal servers
+- Management to security systems
+- Staff to internet
+- Guest to internet
+
+Examples of denied traffic:
+
+- Staff to Management
+- Security to Staff
+- Guest to Servers
+- Guest to Security
+- Guest to Management
+- Guest to Staff
+- Guest to Voice
+- Guest to DMZ
+- DMZ to Servers
+- DMZ to Security
+- DMZ to Management
+- DMZ to Staff
+- DMZ to Voice
+
+## Security Design
+
+The network uses both segmentation and traffic filtering.
+
+VLANs separate systems into different logical networks.
+
+ACLs control which networks are permitted to communicate.
+
+This prevents a guest device, compromised honeypot, or lower-trust system from freely accessing the corporate network.
+
+The DMZ is especially important because honeypot systems may intentionally receive suspicious or malicious traffic.
+
+If one of those systems is compromised, ACL rules help prevent the attacker from moving into trusted internal networks.
+
+## Key Takeaways
+
+One of the biggest lessons from this lab was that using VLANs does not automatically secure a network.
+
+VLANs provide logical separation, but once routing exists between those VLANs, traffic must still be controlled using ACLs or firewall policies.
+
+I also learned how wireless networks can be mapped to different VLANs using different SSIDs, allowing staff, management, and guest users to share wireless infrastructure while remaining logically separated.
+
+The final design uses a deny-by-default approach and only permits traffic that has a clear business purpose.
