@@ -1,0 +1,152 @@
+# Small Business Network Security & Segmentation Lab
+
+## Overview
+
+This lab was designed as a small business network environment focused on network segmentation, access control, wireless separation, server infrastructure, and security monitoring.
+
+The goal was to build a realistic network where different departments and device types are separated using VLANs, while still allowing the traffic each group actually needs.
+
+The environment includes employee systems, management devices, servers, security cameras, VoIP phones, guest Wi-Fi, a DMZ, honeypots, a firewall, routing, and access control rules.
+
+## Environment
+
+The lab was built using NetworkSim in a browser-based network simulation environment.
+
+The topology includes:
+
+- Layer 3 switching
+- Layer 2 network segmentation
+- Router and firewall
+- Multiple VLANs
+- Employee and management wireless networks
+- Guest Wi-Fi
+- DNS, FTP, HTTP/HTTPS, and NAS services
+- Network printer
+- Security cameras and NVR
+- VoIP phones
+- DMZ
+- Honeypot systems
+- ACL-based traffic filtering
+
+## Network Design
+
+The network was separated into the following VLANs:
+
+| VLAN | Purpose | Network |
+|------|---------|---------|
+| 10 | Servers | 10.0.1.0/24 |
+| 20 | Security | 10.0.2.0/24 |
+| 30 | Management | 10.0.3.0/24 |
+| 40 | Staff | 10.0.4.0/24 |
+| 50 | Voice | 10.0.5.0/24 |
+| 60 | Guest | 10.0.6.0/24 |
+| 70 | DMZ | 10.0.7.0/24 |
+
+## Topology
+
+The environment was designed around a central Layer 3 switching and routing structure with firewall protection at the network edge.
+
+The internal network contains separate VLANs for users, infrastructure, security devices, voice systems, and wireless access.
+
+The DMZ contains honeypot systems that are intentionally isolated from the internal network.
+
+Guest Wi-Fi is also separated from the corporate network and is only allowed to access the internet.
+
+## Servers and Services
+
+The server VLAN contains multiple systems providing different services:
+
+- FTP server
+- DNS server
+- HTTP/HTTPS server
+- NAS server
+- Network printer
+
+The security VLAN contains the IP security cameras and an NVR used for video recording and storage.
+
+## Wireless Network
+
+The wireless environment includes separate SSIDs for different user groups.
+
+The staff wireless access point provides:
+
+- Management SSID mapped to VLAN 30
+- Staff SSID mapped to VLAN 40
+
+The guest wireless access point is mapped to VLAN 60 and is separated from the internal network.
+
+Guest devices are permitted to access the internet but are blocked from accessing internal systems.
+
+## DMZ and Honeypot
+
+The DMZ is placed in VLAN 70 and contains:
+
+- Two honeypot endpoints
+- One honeypot server
+
+The honeypot environment is intentionally separated from internal systems.
+
+ACL rules prevent the DMZ from initiating connections into the staff, management, server, voice, and security VLANs.
+
+This helps limit lateral movement if a honeypot system is compromised.
+
+## Access Control
+
+The network uses a deny-by-default ACL policy.
+
+Traffic is only permitted where it is required.
+
+Examples include:
+
+- Management can access internal infrastructure and servers
+- Staff can access the internet and approved internal services
+- Guest devices can access the internet only
+- Guest devices cannot access internal VLANs
+- DMZ systems cannot access internal VLANs
+- Security devices are isolated from staff systems
+- Staff systems cannot access the management network
+
+## Security Goals
+
+The main security goals of the lab were:
+
+- Reduce unnecessary communication between systems
+- Separate users and device types using VLANs
+- Restrict guest access
+- Protect management systems
+- Isolate security cameras
+- Separate VoIP traffic
+- Protect internal systems from the DMZ
+- Demonstrate least-privilege network access
+
+## What I Learned
+
+This lab helped me better understand the difference between physical network connectivity and logical network segmentation.
+
+Even though multiple systems may connect through the same switching infrastructure, VLANs can separate them into different broadcast domains.
+
+I also learned that VLANs alone do not provide complete security. Once routing between VLANs is enabled, ACLs or firewall rules are needed to control which networks are allowed to communicate.
+
+Another important part of the lab was understanding how guest networks and DMZ systems should be isolated from trusted internal systems.
+
+## Skills Demonstrated
+
+- Network topology design
+- VLAN configuration
+- Network segmentation
+- Inter-VLAN routing
+- Access control lists
+- Firewall concepts
+- Guest network isolation
+- DMZ design
+- Honeypot isolation
+- Wireless SSID segmentation
+- Server infrastructure
+- DNS
+- FTP
+- HTTP/HTTPS
+- NAS
+- VoIP networking
+- IP camera segmentation
+- Network security principles
+- Least privilege
